@@ -1,0 +1,39 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import DetailArticle from '../../components/DetailArticle/DetailArticle'
+import Tag from '../../components/Tag/Tag'
+import Title from '../../components/Title/Title'
+import Wysiwyg from '../../components/Wysiwyg/Wysiwyg'
+
+export async function getStaticPaths() {
+  const data = await fetch(`${import.meta.env.PUBLIC_API_URL}/posts?_embed&page=1&per_page=100`)
+  const posts = await data.json()
+  let tags = await fetch(`${import.meta.env.PUBLIC_API_URL}/tags`)
+  tags = await tags.json()
+  return posts.map((post: any) => ({
+    params: { slug: post.slug },
+    props: {
+      post: post,
+      tags: tags
+    },
+  }));
+}
+
+const { slug } = Astro.params;
+const res = await fetch(`${import.meta.env.PUBLIC_API_URL}/posts?_embed&slug=${slug}`);
+const [post] = await res.json()
+const tags = Astro.props.tags.filter((tag: any) => post.tags.includes(tag.id))
+const renderedContent = post.content.rendered;
+---
+
+<Layout title={post.title.rendered}>
+  <DetailArticle>
+    <Tag obj={tags}/>
+    <Title>{post.title.rendered}</Title>
+    <div class="c-wysiwyg">
+      <Wysiwyg>
+        <Fragment set:html={renderedContent} />
+      </Wysiwyg>
+    </div>
+  </DetailArticle>
+</Layout>
